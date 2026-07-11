@@ -334,7 +334,7 @@ function sendMessage() {
   if (!text) return;
   input.value = "";
   autoGrow();
-  send({ t: "send", text, includePage: $("ctx-page").checked });
+  send({ t: "send", text, includePage: true });
 }
 
 $("btn-send").addEventListener("click", sendMessage);
