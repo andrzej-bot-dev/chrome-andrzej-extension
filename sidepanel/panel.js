@@ -323,7 +323,7 @@ function connectPort() {
 function autoGrow() {
   const input = $("input");
   input.style.height = "auto";
-  input.style.height = Math.min(input.scrollHeight, 140) + "px";
+  input.style.height = Math.min(input.scrollHeight, 200) + "px";
 }
 
 function sendMessage() {
@@ -358,6 +358,42 @@ $("btn-history").addEventListener("click", () => {
   if (!pane.classList.contains("hidden")) send({ t: "history-list" });
 });
 $("btn-history-close").addEventListener("click", () => $("history-pane").classList.add("hidden"));
+
+// ---------------------------------------------------------------- composer resize
+
+// Drag handle to resize the composer area (adjusts #composer height)
+(() => {
+  const handle = $("resize-handle");
+  const composer = $("composer");
+  const chat = $("chat");
+  let dragging = false;
+  let startY = 0;
+  let startComposerHeight = 0;
+
+  handle.addEventListener("mousedown", (e) => {
+    dragging = true;
+    startY = e.clientY;
+    startComposerHeight = composer.getBoundingClientRect().height;
+    document.body.style.cursor = "ns-resize";
+    document.body.style.userSelect = "none";
+    e.preventDefault();
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (!dragging) return;
+    const dy = startY - e.clientY; // up = positive = bigger
+    const newHeight = Math.max(80, Math.min(startComposerHeight + dy, window.innerHeight - 100));
+    composer.style.flex = `0 0 ${newHeight}px`;
+    chat.scrollTop = chat.scrollHeight;
+  });
+
+  document.addEventListener("mouseup", () => {
+    if (!dragging) return;
+    dragging = false;
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+  });
+})();
 
 // Group is taken from ?group= (subsequent tab activations). On a fresh open
 // via click, the panel gets ?tab=<id> instead of a group (group doesn't exist yet) —
