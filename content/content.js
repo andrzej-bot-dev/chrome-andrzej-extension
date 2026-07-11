@@ -7,6 +7,43 @@
   if (window.__ocxInstalled) return;
   window.__ocxInstalled = true;
 
+  // ---------- GLOBAL FOCUS GUARD (runs at document_start) ----------
+  // Prevent target="_blank" from stealing focus when agent clicks links.
+  // This runs BEFORE any page scripts, catching all <a> elements and window.open().
+  if (!window.__ocxFocusGuard) {
+    window.__ocxFocusGuard = true;
+
+    // Intercept window.open — replace _blank with _self
+    const _origOpen = window.open;
+    window.open = function(url, name, features) {
+      if (name === '_blank' || !name) name = '_self';
+      return _origOpen.call(window, url, name, features);
+    };
+
+    // Strip target="_blank" from all existing and future links
+    const stripBlank = (el) => {
+      if (!el) return;
+      if (el.tagName === 'A' && el.target === '_blank') el.target = '_self';
+      el.querySelectorAll?.('a[target="_blank"]')?.forEach(a => a.target = '_self');
+    };
+    // Process existing DOM — documentElement may not exist yet at document_start
+    const docEl = document.documentElement;
+    if (docEl) stripBlank(docEl);
+    document.addEventListener('DOMContentLoaded', () => {
+      if (document.documentElement) stripBlank(document.documentElement);
+    }, { once: true });
+
+    // Watch for dynamically added links
+    new MutationObserver(muts => {
+      for (const m of muts)
+        for (const n of m.addedNodes) {
+          if (n.nodeType !== 1) continue;
+          if (n.tagName === 'A' && n.target === '_blank') n.target = '_self';
+          n.querySelectorAll?.('a[target="_blank"]')?.forEach(a => a.target = '_self');
+        }
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  }
+
   // ---------- reference registry ----------
   let refToEl = new Map();   // "e12" -> Element
   let elToRef = new WeakMap();
