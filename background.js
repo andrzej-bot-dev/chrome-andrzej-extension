@@ -393,6 +393,18 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
 // ---------------------------------------------------------------- panel ports
 
+// Intercept tabs opened by target=_blank clicks within a group — Chrome
+// activates them by default, stealing focus from the user's current app.
+// Deactivate them immediately and let the agent pick them up via getTargetTab().
+chrome.tabs.onCreated.addListener((tab) => {
+  if (!tab.groupId || tab.groupId === -1) return;
+  // Only de-activate if this tab was opened within an existing group
+  // (user clicks a link with target=_blank while the agent is working)
+  if (tab.active) {
+    chrome.tabs.update(tab.id, { active: false }).catch(() => {});
+  }
+});
+
 chrome.runtime.onConnect.addListener(async (port) => {
   const m = /^panel-(\d+)$/.exec(port.name || "");
   if (!m) return;
