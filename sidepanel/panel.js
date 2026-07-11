@@ -11,7 +11,9 @@ const chatEl = $("chat");
 let groupId = Number(new URLSearchParams(location.search).get("group"));
 let port = null;
 let currentModel = "";
+let assistantName = "assistant";     // bot name from settings (e.g. "Andrzej")
 let modelSelected = false;           // true when a valid model is chosen
+let lastAppliedModel = "";            // track what was sent to avoid duplicate select-backend
 let pendingBubble = null;          // streaming response bubble
 const chips = new Map();           // id -> chip handle (browser actions)
 const srvChips = new Map();        // itemId -> chip handle (server tools)
@@ -35,7 +37,7 @@ function addMsg(role, text) {
     header.className = "msg-header";
     const who = document.createElement("span");
     who.className = "who";
-    who.textContent = role === "user" ? "You" : (currentModel || "assistant");
+    who.textContent = role === "user" ? "You" : assistantName;
     if (role === "assistant") who.style.opacity = "0.5";
     header.appendChild(who);
     const ts = document.createElement("span");
@@ -136,7 +138,7 @@ function addApprovalCard({ id, description, why, origin, sensitive }) {
   card.className = "approval";
   const q = document.createElement("div");
   q.className = "q";
-  q.innerHTML = `${sensitive ? "⚠️ <b>Sensitive action.</b> " : ""}${currentModel || "assistant"} wants to: <b></b>${why ? `<div class="muted"></div>` : ""}`;
+  q.innerHTML = `${sensitive ? "⚠️ <b>Sensitive action.</b> " : ""}${assistantName} wants to: <b></b>${why ? `<div class="muted"></div>` : ""}`;
   q.querySelector("b").textContent = description;
   if (why) q.querySelector(".muted").textContent = "Reason: " + why;
   card.appendChild(q);
@@ -255,6 +257,13 @@ function setCatalog({ groups, active }) {
   const selVal = sel.value.split("::")[1] || "";
   modelSelected = !!selVal;
   updateSendState();
+
+  // If a model is auto-selected by backend (from saved settings) but not yet
+  // applied to the panel, send the selection to the controller
+  if (modelSelected && active?.model && !lastAppliedModel) {
+    lastAppliedModel = sel.value;
+    send({ t: "select-backend", group: active.group, model: active.model });
+  }
 }
 
 function updateSendState() {
@@ -310,7 +319,8 @@ function send(msg) {
 function onMessage(msg) {
   switch (msg.t) {
     case "state": {
-      currentModel = msg.currentModel || msg.assistantName || "";
+      currentModel = msg.currentModel || "";
+      assistantName = msg.assistantName || msg.currentModel || "assistant";
       $("debug-pane").classList.toggle("hidden", !msg.debug);
       renderTranscript(msg.transcript);
       setConnState(msg.conn?.state || "offline", msg.conn?.reason || "");

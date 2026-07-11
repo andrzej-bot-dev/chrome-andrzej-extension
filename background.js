@@ -202,9 +202,32 @@ async function buildCatalog() {
     groupsOut.push({ key: `direct:${p.id}`, label: p.label, models });
   }
 
-  const active = s.backendMode === "openclaw"
+  let active = s.backendMode === "openclaw"
     ? { group: "openclaw", model: s.selectedModel || "" }
     : { group: `direct:${s.directProvider}`, model: s.directModel || s.providerModels?.[s.directProvider] || "" };
+
+  // Auto-select last used model if none chosen, or first available model
+  if (!active.model) {
+    for (const g of groupsOut) {
+      if (g.models.length) {
+        // Try to find a previously used model from providerModels
+        const saved = s.providerModels?.[g.key.replace(/^direct:/, "")];
+        const match = saved ? g.models.find(m => m.id === saved) : null;
+        active = { group: g.key, model: (match || g.models[0]).id };
+        break;
+      }
+    }
+    // If we auto-selected, persist it
+    if (active.model) {
+      if (active.group.startsWith("direct:")) {
+        const pid = active.group.slice("direct:".length);
+        chrome.storage.local.set({ directProvider: pid, directModel: active.model, backendMode: "direct" });
+      } else {
+        chrome.storage.local.set({ selectedModel: active.model, backendMode: "openclaw" });
+      }
+    }
+  }
+
   return { groups: groupsOut, active };
 }
 
