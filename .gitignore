@@ -1,0 +1,7 @@
+.claude/
+__MACOSX/
+*.zip
+node_modules/
+.env
+*.log
+.DS_Store

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Andrzej — OpenClaw</title>
+  <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <header id="topbar">
+    <div class="brand">
+      <span class="logo">🦞</span>
+      <span id="assistant-name">Andrzej</span>
+      <span id="conn-dot" class="dot offline" title="Disconnected"></span>
+    </div>
+    <div class="top-actions">
+      <select id="model-select" title="Model"></select>
+      <button id="btn-new" title="New conversation">✚</button>
+      <button id="btn-history" title="Chat history">🕘</button>
+      <button id="btn-settings" title="Settings">⚙︎</button>
+    </div>
+  </header>
+
+  <div id="site-bar">
+    <span id="site-label" class="site-label">—</span>
+    <label class="site-toggle" title="Allow automatic actions on this site (without asking for each action)">
+      <input type="checkbox" id="site-allow">
+      <span>auto-actions</span>
+    </label>
+  </div>
+
+  <main id="chat"></main>
+
+  <div id="history-pane" class="pane hidden">
+    <div class="pane-head">
+      <b>Chat history</b>
+      <button id="btn-history-close">✕</button>
+    </div>
+    <div id="history-list"></div>
+  </div>
+
+  <div id="offline-hint" class="hidden">
+    <p><b>No connection to OpenClaw.</b></p>
+    <p id="offline-reason" class="muted"></p>
+    <p><button id="btn-reconnect">Reconnect</button>
+       <button id="btn-open-options">Connection settings</button></p>
+  </div>
+
+  <footer id="composer">
+    <div id="context-row">
+      <label class="ctx-chip" title="Include current page content with the message">
+        <input type="checkbox" id="ctx-page"> <span>📄 page</span>
+      </label>
+      <label class="ctx-chip" title="Include a screenshot of the current tab">
+        <input type="checkbox" id="ctx-shot"> <span>📸 shot</span>
+      </label>
+      <span id="working" class="hidden"><span class="spinner"></span><span id="working-label">Andrzej is working…</span>
+        <button id="btn-stop" title="Stop">■ stop</button></span>
+    </div>
+    <div id="input-row">
+      <textarea id="input" rows="1" placeholder="Write to Andrzej… (Enter — send, Shift+Enter — new line)"></textarea>
+      <button id="btn-send" title="Send">➤</button>
+    </div>
+  </footer>
+
+  <details id="debug-pane" class="hidden">
+    <summary>debug (WebSocket frames)</summary>
+    <pre id="debug-log"></pre>
+  </details>
+
+  <script type="module" src="panel.js"></script>
+</body>
+</html>
