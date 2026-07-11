@@ -398,11 +398,37 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 // Deactivate them immediately and let the agent pick them up via getTargetTab().
 chrome.tabs.onCreated.addListener((tab) => {
   if (!tab.groupId || tab.groupId === -1) return;
-  // Only de-activate if this tab was opened within an existing group
-  // (user clicks a link with target=_blank while the agent is working)
   if (tab.active) {
     chrome.tabs.update(tab.id, { active: false }).catch(() => {});
   }
+});
+
+// Track user's active tab across all windows. When agent operations activate
+// a group tab, we detect it and restore focus to the user's tab.
+let _userActiveTabId = null;
+let _userActiveWindowId = null;
+
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  try {
+    const tab = await chrome.tabs.get(activeInfo.tabId);
+    // If this is NOT an agent group tab, track it as the user's active tab
+    if (!tab.groupId || tab.groupId === -1 || !controllers.has(tab.groupId)) {
+      _userActiveTabId = tab.id;
+      _userActiveWindowId = tab.windowId;
+      return;
+    }
+    // If agent is working in this group and user didn't intend to switch,
+    // restore focus to the user's tab
+    const ctl = controllers.get(tab.groupId);
+    if (ctl?.agent?.running && _userActiveTabId && _userActiveTabId !== tab.id) {
+      try {
+        await chrome.tabs.update(_userActiveTabId, { active: true });
+        if (_userActiveWindowId) {
+          await chrome.windows.update(_userActiveWindowId, { focused: true }).catch(() => {});
+        }
+      } catch { /* tab closed */ }
+    }
+  } catch { /* tab gone */ }
 });
 
 chrome.runtime.onConnect.addListener(async (port) => {
