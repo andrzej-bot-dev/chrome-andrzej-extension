@@ -91,6 +91,17 @@ function addChipEl(label, why, status = "…") {
     w.textContent = why;
     chip.appendChild(w);
   }
+  // Error details — hidden until status is "fail"/error
+  const details = document.createElement("div");
+  details.className = "chip-details hidden";
+  chip.appendChild(details);
+
+  chip.addEventListener("click", () => {
+    if (chip.classList.contains("fail") && !details.classList.contains("hidden")) {
+      details.classList.add("hidden");
+    }
+  });
+
   chatEl.appendChild(chip);
   scrollDown();
   return {
@@ -98,6 +109,15 @@ function addChipEl(label, why, status = "…") {
     setResult(ok, note) {
       chip.classList.add(ok ? "ok" : "fail");
       st.textContent = note || (ok ? "ok" : "error");
+      // Store full error details for click-to-expand
+      if (!ok && note) {
+        details.textContent = note;
+        chip.style.cursor = "pointer";
+        chip.addEventListener("click", () => {
+          details.classList.toggle("hidden");
+          if (!details.classList.contains("hidden")) scrollDown();
+        }, { once: false });
+      }
       scrollDown();
     },
   };
