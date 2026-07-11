@@ -73,7 +73,18 @@ body {
 /* ---------- chat ---------- */
 #chat { flex: 1 1 auto; overflow-y: auto; padding: 12px 10px 20px; scroll-behavior: smooth; }
 
-.msg { margin-bottom: 12px; max-width: 100%; }
+.msg { margin-bottom: 12px; max-width: 100%; position: relative; }
+.msg-header { display: flex; align-items: center; justify-content: space-between; margin: 0 4px 2px; gap: 8px; }
+.msg-header .who { font-size: 11px; color: var(--muted); font-weight: 600; }
+.timestamp { font-size: 10px; color: var(--muted); opacity: 0.4; font-family: var(--mono); flex: 0 0 auto; }
+.copy-btn {
+  position: absolute; top: 2px; right: 2px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 5px; padding: 3px; cursor: pointer; color: var(--muted);
+  opacity: 0; transition: opacity .15s; display: flex; align-items: center;
+}
+.msg:hover .copy-btn { opacity: 0.6; }
+.copy-btn:hover { opacity: 1 !important; color: var(--fg); }
+.copy-btn.copied { opacity: 1 !important; color: var(--ok); border-color: var(--ok); }
 .msg .bubble {
   padding: 8px 12px; border-radius: var(--radius);
   word-wrap: break-word; overflow-wrap: break-word;
@@ -84,7 +95,7 @@ body {
   background: none; border: 1px dashed var(--border); color: var(--muted);
   font-size: 12px; text-align: center;
 }
-.msg .who { font-size: 11px; color: var(--muted); margin: 0 4px 2px; font-weight: 600; }
+.msg.system .who { display: none; }
 
 .bubble p { margin: 0 0 8px; } .bubble p:last-child { margin-bottom: 0; }
 .bubble h3, .bubble h4, .bubble h5, .bubble h6 { margin: 10px 0 6px; }

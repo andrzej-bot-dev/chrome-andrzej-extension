@@ -20,21 +20,48 @@ const approvalCards = new Map();   // id -> approval card
 
 function scrollDown() { chatEl.scrollTop = chatEl.scrollHeight; }
 
+function formatTimestamp() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 function addMsg(role, text) {
   const wrap = document.createElement("div");
   wrap.className = `msg ${role}`;
   if (role !== "system") {
-    const who = document.createElement("div");
+    const header = document.createElement("div");
+    header.className = "msg-header";
+    const who = document.createElement("span");
     who.className = "who";
     who.textContent = role === "user" ? "You" : (currentModel || "assistant");
     if (role === "assistant") who.style.opacity = "0.5";
-    wrap.appendChild(who);
+    header.appendChild(who);
+    const ts = document.createElement("span");
+    ts.className = "timestamp";
+    ts.textContent = formatTimestamp();
+    header.appendChild(ts);
+    wrap.appendChild(header);
   }
   const bubble = document.createElement("div");
   bubble.className = "bubble";
   if (role === "assistant") bubble.innerHTML = renderMarkdown(text);
   else bubble.textContent = text;
   wrap.appendChild(bubble);
+  // Copy button (shown on hover)
+  if (role !== "system" && text) {
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "copy-btn";
+    copyBtn.title = "Copy message";
+    copyBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    copyBtn.addEventListener("click", () => {
+      navigator.clipboard.writeText(text).then(() => {
+        copyBtn.classList.add("copied");
+        setTimeout(() => copyBtn.classList.remove("copied"), 1500);
+      });
+    });
+    wrap.appendChild(copyBtn);
+  }
   chatEl.appendChild(wrap);
   scrollDown();
   return bubble;
@@ -187,11 +214,11 @@ function setSite({ allowed, origin }) {
 function setCatalog({ groups, active }) {
   const sel = $("model-select");
   sel.innerHTML = "";
-  if (!groups?.length) {
+  if (!groups?.length || groups.every(g => !g.models.length)) {
     const o = document.createElement("option");
-    o.value = ""; o.textContent = "⚙︎ configure in settings"; o.disabled = true;
+    o.value = ""; o.textContent = "Choose model…"; o.disabled = true; o.selected = true;
     sel.appendChild(o);
-    sel.disabled = true;
+    sel.disabled = false; // keep enabled so user can interact
     return;
   }
   sel.disabled = false;

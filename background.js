@@ -234,10 +234,11 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 // ---------------------------------------------------------------- start / install
 
 chrome.runtime.onInstalled.addListener(() => {
-  // Make the side panel open automatically when clicking the toolbar icon.
-  // This is the reliable way — chrome.sidePanel.open() called from
-  // action.onClicked often loses the user-gesture context in MV3 SW.
-  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+  // Disable openPanelOnActionClick — we handle panel opening manually in
+  // action.onClicked so we can also do tab grouping synchronously.
+  // With openPanelOnActionClick=true, onClicked does NOT fire, so tab grouping
+  // only happens via panel→SW message roundtrip, causing the "two clicks" bug.
+  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false }).catch(() => {});
   groups.rebuild();
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({ id: "ask-selection", title: "Ask Andrzej about selection", contexts: ["selection"] });
@@ -246,7 +247,7 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 chrome.runtime.onStartup.addListener(() => {
-  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false }).catch(() => {});
   groups.rebuild();
 });
 
@@ -287,8 +288,9 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
 /** Opens the panel synchronously within a gesture — no awaits or .then() before open(). */
 function openPanelForGesture(tab) {
   if (!tab?.id) return;
-  const g = (tab.groupId != null && tab.groupId !== -1) ? tab.groupId : null;
-  const path = g != null ? `sidepanel/panel.html?group=${g}` : `sidepanel/panel.html?tab=${tab.id}`;
+  // Always use tabId-based path so the panel is scoped to this tab.
+  // The panel will resolve its group via bind-tab message.
+  const path = "sidepanel/panel.html";
   // Synchronous calls — both fire within the user gesture stack frame
   chrome.sidePanel.setOptions({ tabId: tab.id, path, enabled: true });
   chrome.sidePanel.open({ tabId: tab.id }).catch(() => {
@@ -306,13 +308,10 @@ async function bindTab(tab) {
   return groupId;
 }
 
-// NOTE: action.onClicked does NOT fire when openPanelOnActionClick is true.
-// The panel opens itself; tab grouping is handled by the panel on load
-// (it queries the active tab and sends "bind-tab" to the SW).
-// We keep bindTab for use from keyboard shortcut and context menu.
-
+// action.onClicked fires because openPanelOnActionClick is false.
+// We call open() synchronously in the gesture, then do tab grouping.
+// This ensures both panel AND group are created in one click.
 chrome.action.onClicked.addListener((tab) => {
-  // Fallback: if openPanelOnActionClick somehow isn't set, still try to open
   openPanelForGesture(tab);
   bindTab(tab);
 });
