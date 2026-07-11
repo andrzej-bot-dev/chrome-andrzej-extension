@@ -10,7 +10,7 @@ const chatEl = $("chat");
 
 let groupId = Number(new URLSearchParams(location.search).get("group"));
 let port = null;
-let assistantName = "Andrzej";
+let currentModel = "";
 let pendingBubble = null;          // streaming response bubble
 const chips = new Map();           // id -> chip handle (browser actions)
 const srvChips = new Map();        // itemId -> chip handle (server tools)
@@ -26,7 +26,8 @@ function addMsg(role, text) {
   if (role !== "system") {
     const who = document.createElement("div");
     who.className = "who";
-    who.textContent = role === "user" ? "You" : assistantName;
+    who.textContent = role === "user" ? "You" : (currentModel || "assistant");
+    if (role === "assistant") who.style.opacity = "0.5";
     wrap.appendChild(who);
   }
   const bubble = document.createElement("div");
@@ -107,7 +108,7 @@ function addApprovalCard({ id, description, why, origin, sensitive }) {
   card.className = "approval";
   const q = document.createElement("div");
   q.className = "q";
-  q.innerHTML = `${sensitive ? "⚠️ <b>Sensitive action.</b> " : ""}${assistantName} wants to: <b></b>${why ? `<div class="muted"></div>` : ""}`;
+  q.innerHTML = `${sensitive ? "⚠️ <b>Sensitive action.</b> " : ""}${currentModel || "assistant"} wants to: <b></b>${why ? `<div class="muted"></div>` : ""}`;
   q.querySelector("b").textContent = description;
   if (why) q.querySelector(".muted").textContent = "Reason: " + why;
   card.appendChild(q);
@@ -147,7 +148,7 @@ function renderTranscript(messages) {
   chips.clear(); srvChips.clear(); approvalCards.clear();
   pendingBubble = null;
   if (!messages?.length) {
-    systemNote(`Hi! I'm ${assistantName} 🦞 This conversation is pinned to this tab group — drag more tabs into the group to expand my scope. I can read pages and take actions: click, fill, navigate.`);
+    systemNote(`Connected. This conversation is pinned to this tab group — I can read pages and take actions: click, fill, navigate. Drag more tabs into the group to expand my scope.`);
     return;
   }
   for (const m of messages) {
@@ -175,8 +176,8 @@ function setConnState(state, detail = "") {
   }
 }
 
-function setSite({ label, allowed, origin, tabCount }) {
-  $("site-label").textContent = (tabCount > 1 ? `[${tabCount} tabs] ` : "") + (label || "—");
+function setSite({ allowed, origin }) {
+  if (!$("site-allow")) return;
   $("site-allow").checked = !!allowed;
   $("site-allow").disabled = !origin;
 }
@@ -264,12 +265,11 @@ function send(msg) {
 function onMessage(msg) {
   switch (msg.t) {
     case "state": {
-      assistantName = msg.assistantName || "Andrzej";
-      $("assistant-name").textContent = assistantName;
+      currentModel = msg.currentModel || msg.assistantName || "";
       $("debug-pane").classList.toggle("hidden", !msg.debug);
       renderTranscript(msg.transcript);
       setConnState(msg.conn?.state || "offline", msg.conn?.reason || "");
-      setWorking(msg.working, `${assistantName} is working…`);
+      setWorking(msg.working, `working…`);
       if (msg.approval) addApprovalCard(msg.approval);
       if (msg.prefill) { $("input").value = msg.prefill; autoGrow(); $("input").focus(); }
       break;
