@@ -343,7 +343,7 @@
     return { ok: true, selected: clean(opt.textContent, 60) };
   }
 
-  async function doScroll({ ref, selector, to, dy, maxSteps = 40, stepDelayMs = 400 }) {
+  async function doScroll({ ref, selector, to, dy, maxSteps = 40, stepDelayMs = 800 }) {
     if (ref || selector) {
       const el = resolveTarget({ ref, selector });
       if (!el) return { ok: false, error: "Element not found for scrolling." };
@@ -371,7 +371,7 @@
           stableRounds = 0;
         }
         lastHeight = pageHeight();
-        scrollBy({ top: innerHeight * 0.9 });
+        scrollBy({ top: innerHeight * 0.5 });
         steps++;
         await new Promise(r => setTimeout(r, stepDelayMs));
       }
