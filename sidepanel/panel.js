@@ -325,7 +325,7 @@ function connectPort() {
 function autoGrow() {
   const input = $("input");
   input.style.height = "auto";
-  input.style.height = Math.min(input.scrollHeight, 200) + "px";
+  input.style.height = Math.max(100, Math.min(input.scrollHeight, 300)) + "px";
 }
 
 function sendMessage() {
@@ -334,7 +334,7 @@ function sendMessage() {
   if (!text) return;
   input.value = "";
   autoGrow();
-  send({ t: "send", text, includePage: $("ctx-page").checked, includeShot: $("ctx-shot").checked });
+  send({ t: "send", text, includePage: $("ctx-page").checked });
 }
 
 $("btn-send").addEventListener("click", sendMessage);

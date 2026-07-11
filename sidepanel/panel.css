@@ -180,7 +180,7 @@ body {
 
 #input-row { display: flex; gap: 8px; align-items: flex-end; }
 #input {
-  flex: 1; resize: vertical; min-height: 38px; max-height: 300px;
+  flex: 1; resize: vertical; min-height: 100px; max-height: 300px;
   background: var(--bg3); color: var(--fg); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 8px 10px; font: 14px/1.4 var(--font);
   outline: none; overflow-y: auto;

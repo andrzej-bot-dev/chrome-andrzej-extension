@@ -49,16 +49,13 @@
     <div id="resize-handle"></div>
     <div id="context-row">
       <label class="ctx-chip" title="Include current page content with the message">
-        <input type="checkbox" id="ctx-page"> <span>📄 page</span>
-      </label>
-      <label class="ctx-chip" title="Include a screenshot of the current tab">
-        <input type="checkbox" id="ctx-shot"> <span>📸 shot</span>
+        <input type="checkbox" id="ctx-page" checked> <span>📄 page</span>
       </label>
       <span id="working" class="hidden"><span class="spinner"></span><span id="working-label">Andrzej is working…</span>
         <button id="btn-stop" title="Stop">■ stop</button></span>
     </div>
     <div id="input-row">
-      <textarea id="input" rows="1" placeholder="Write to Andrzej… (Enter — send, Shift+Enter — new line)"></textarea>
+      <textarea id="input" rows="3" placeholder="Write to Andrzej… (Enter — send, Shift+Enter — new line)"></textarea>
       <button id="btn-send" title="Send">➤</button>
     </div>
   </footer>
