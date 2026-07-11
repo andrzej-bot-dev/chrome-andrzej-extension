@@ -37,7 +37,7 @@ function addMsg(role, text) {
     header.className = "msg-header";
     const who = document.createElement("span");
     who.className = "who";
-    who.textContent = role === "user" ? "You" : assistantName;
+    who.textContent = role === "user" ? "You" : `${assistantName}${currentModel ? " · " + currentModel : ""}`;
     if (role === "assistant") who.style.opacity = "0.5";
     header.appendChild(who);
     const ts = document.createElement("span");
@@ -256,6 +256,7 @@ function setCatalog({ groups, active }) {
   // Check if a real model (not empty) is selected
   const selVal = sel.value.split("::")[1] || "";
   modelSelected = !!selVal;
+  if (selVal) currentModel = selVal.replace(/^.*\//, "");
   updateSendState();
 
   // If a model is auto-selected by backend (from saved settings) but not yet
@@ -421,6 +422,7 @@ $("model-select").addEventListener("change", (e) => {
   if (i < 0) return;
   const model = v.slice(i + 2);
   modelSelected = !!model;
+  if (model) currentModel = model;
   updateSendState();
   send({ t: "select-backend", group: v.slice(0, i), model });
 });
