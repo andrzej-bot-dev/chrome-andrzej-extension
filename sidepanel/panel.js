@@ -18,6 +18,7 @@ let pendingBubble = null;          // streaming response bubble
 const chips = new Map();           // id -> chip handle (browser actions)
 const srvChips = new Map();        // itemId -> chip handle (server tools)
 const approvalCards = new Map();   // id -> approval card
+const errorLog = [];                // rolling error log for modal
 
 // ---------------------------------------------------------------- rendering
 
@@ -73,7 +74,6 @@ function addMsg(role, text) {
 function addChipEl(label, why, status = "…") {
   const chip = document.createElement("div");
   chip.className = "action-chip";
-  // Top row: label + status (horizontal)
   const top = document.createElement("div");
   top.className = "label";
   const lab = document.createElement("span");
@@ -91,32 +91,18 @@ function addChipEl(label, why, status = "…") {
     w.textContent = why;
     chip.appendChild(w);
   }
-  // Error details — hidden until status is "fail"/error
-  const details = document.createElement("div");
-  details.className = "chip-details hidden";
-  chip.appendChild(details);
-
-  chip.addEventListener("click", () => {
-    if (chip.classList.contains("fail") && !details.classList.contains("hidden")) {
-      details.classList.add("hidden");
-    }
-  });
 
   chatEl.appendChild(chip);
   scrollDown();
   return {
     el: chip,
-    setResult(ok, note) {
+    setResult(ok, note, fullError) {
       chip.classList.add(ok ? "ok" : "fail");
       st.textContent = note || (ok ? "ok" : "error");
-      // Store full error details for click-to-expand
-      if (!ok && note) {
-        details.textContent = note;
+      // On error: show modal with full details when chip is clicked
+      if (!ok) {
         chip.style.cursor = "pointer";
-        chip.addEventListener("click", () => {
-          details.classList.toggle("hidden");
-          if (!details.classList.contains("hidden")) scrollDown();
-        }, { once: false });
+        chip.addEventListener("click", () => showErrorModal(fullError || note || "Unknown error", label));
       }
       scrollDown();
     },
@@ -124,6 +110,19 @@ function addChipEl(label, why, status = "…") {
 }
 
 function systemNote(text) { addMsg("system", text); }
+
+function showErrorModal(errorText, context) {
+  const modal = $("error-modal");
+  const log = $("error-log");
+  const ts = formatTimestamp();
+  log.textContent = `[${ts}] ${context || "Error"}\n\n${errorText}`;
+  modal.classList.remove("hidden");
+}
+
+$("btn-close-modal")?.addEventListener("click", () => $("error-modal").classList.add("hidden"));
+$("error-modal")?.addEventListener("click", (e) => {
+  if (e.target === $("error-modal")) $("error-modal").classList.add("hidden");
+});
 
 function addShot(dataUrl) {
   const bubble = addMsg("system", "");
@@ -360,7 +359,7 @@ function onMessage(msg) {
     case "partial": onPartial(msg.text); break;
     case "note": systemNote(msg.text); pendingBubble = null; break;
     case "chip-add": chips.set(msg.id, addChipEl(msg.label, msg.why)); break;
-    case "chip-res": chips.get(msg.id)?.setResult(msg.ok, msg.note); chips.delete(msg.id); break;
+    case "chip-res": chips.get(msg.id)?.setResult(msg.ok, msg.note, msg.fullError); chips.delete(msg.id); break;
     case "srv-act": {
       const icon = msg.kind === "command" ? "🖥️" : msg.kind === "patch" ? "📝" : msg.kind === "search" ? "🔍" : "🔧";
       if ((msg.phase === "start" || !srvChips.has(msg.itemId)) && msg.phase !== "end") {
@@ -424,9 +423,13 @@ $("input").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
 $("input").addEventListener("input", autoGrow);
-// Escape clears the input when it has text, or blurs it when empty
+// Escape closes modals/panes first, then clears input
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
+    if (!$("error-modal").classList.contains("hidden")) {
+      $("error-modal").classList.add("hidden");
+      return;
+    }
     if (!$("history-pane").classList.contains("hidden")) {
       $("history-pane").classList.add("hidden");
       return;

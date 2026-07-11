@@ -59,6 +59,19 @@
     </div>
   </footer>
 
+  <!-- Error details modal -->
+  <div id="error-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <b>Error details</b>
+        <button id="btn-close-modal" class="icon-btn" title="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <pre id="error-log"></pre>
+    </div>
+  </div>
+
   <details id="debug-pane" class="hidden">
     <summary>debug (WebSocket frames)</summary>
     <pre id="debug-log"></pre>
