@@ -186,8 +186,12 @@
     if (opts.filter !== 'all' && el.getAttribute('aria-hidden') === 'true') return false;
     if (opts.filter !== 'all' && !isVisible(el)) return false;
 
-    if (opts.filter !== 'all' && !opts.refId) {
-      // Viewport filter (unless looking for a specific ref)
+    if (opts.filter !== 'all' && opts.filter !== 'interactive' && !opts.refId) {
+      // Viewport filter for the broad/default snapshot only — keeps text noise down.
+      // NOT applied to the 'interactive' filter (the default snapshot): a no-vision
+      // model needs the FULL interactive map. An "Add to cart" button pushed off-screen
+      // (below the fold, or by the narrow side-panel window) must still appear — clicking
+      // it by ref auto-scrolls it into view. Hidden elements are still excluded via isVisible.
       const rect = el.getBoundingClientRect();
       if (!(rect.top < window.innerHeight && rect.bottom > 0 && rect.left < window.innerWidth && rect.right > 0)) return false;
     }

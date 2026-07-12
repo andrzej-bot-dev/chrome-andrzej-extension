@@ -152,7 +152,8 @@
       <div class="hint">Sensitive actions (payments, passwords, sending, deleting) always require confirmation.</div>
 
       <label for="a-maxsteps">Max agent steps per prompt</label>
-      <input type="number" id="a-maxsteps" min="1" max="50" step="1">
+      <input type="number" id="a-maxsteps" min="1" max="1000" step="1">
+      <div class="hint">How many browser actions the agent may take for one request. Higher = handles long multi-item tasks without stopping (default 200).</div>
 
       <label class="check"><input type="checkbox" id="a-screenshots"> Allow sending screenshots to the model (if the backend supports them)</label>
       <label class="check"><input type="checkbox" id="a-debug"> Show debug panel (raw connection frames)</label>

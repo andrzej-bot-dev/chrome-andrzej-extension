@@ -180,7 +180,7 @@ $("btn-save").addEventListener("click", async () => {
     gatewayToken: $("gw-token").value.trim(),
     assistantName: $("a-name").value.trim() || "Andrzej",
     actionMode: $("a-mode").value,
-    maxSteps: Math.max(1, Math.min(50, Number($("a-maxsteps").value) || 15)),
+    maxSteps: Math.max(1, Math.min(1000, Number($("a-maxsteps").value) || 200)),
     directMaxTokens: Math.max(256, Math.min(128000, Number($("a-maxtok").value) || 8192)),
     allowScreenshots: $("a-screenshots").checked,
     debug: $("a-debug").checked,

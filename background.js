@@ -9,7 +9,7 @@
 // Session = tab group (like Claude in Chrome). The connection and agent loops live here,
 // so work continues when the panel is hidden.
 
-import { loadSettings, DEFAULTS } from "./lib/settings.js";
+import { loadSettings, saveSettings, DEFAULTS } from "./lib/settings.js";
 import { OpenClawGateway } from "./lib/gateway.js";
 import { DirectBackend } from "./lib/direct.js";
 import { PROVIDER_PRESETS, getPreset } from "./lib/providers.js";
@@ -17,7 +17,17 @@ import { GroupManager } from "./lib/groups.js";
 import { ChatController } from "./lib/controller.js";
 
 let settings = { ...DEFAULTS };
-let settingsReady = loadSettings().then((s) => { settings = s; });
+let settingsReady = loadSettings().then(async (s) => {
+  settings = s;
+  // One-time migration: the old default/clamp capped agent steps at 50 — too low
+  // for long multi-item tasks. Raise existing installs to 200 once, then respect
+  // whatever the user sets in options afterwards (guarded by the flag).
+  if (!s._maxStepsBumpedV2) {
+    const patch = { _maxStepsBumpedV2: true };
+    if (!(Number(s.maxSteps) > 50)) patch.maxSteps = 200;
+    try { await saveSettings(patch); settings = { ...settings, ...patch }; } catch { /* storage unavailable */ }
+  }
+});
 const getSettings = () => settings;
 
 let gateway = null;

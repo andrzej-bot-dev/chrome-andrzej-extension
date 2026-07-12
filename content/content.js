@@ -458,42 +458,66 @@
     return { ok: true, selected: clean(opt.textContent, 60) };
   }
 
-  async function doScroll({ ref, selector, to, dy, maxSteps = 40, stepDelayMs = 800 }) {
+  // Smooth, continuous, human-like scrolling (small steps when the tab is visible; fast
+  // jumps + a hard time cap when hidden, so background-tab throttling can't cause a hang).
+  async function doScroll({ ref, selector, to, dy }) {
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     if (ref || selector) {
       const el = resolveTarget({ ref, selector });
       if (!el) return { ok: false, error: "Element not found for scrolling." };
-      el.scrollIntoView({ block: "center", behavior: "instant" });
-      await new Promise(r => setTimeout(r, 250));
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      await sleep(500);
       return pageInfo();
     }
+    const docH = () => document.documentElement.scrollHeight;
+    const atBottom = () => Math.ceil(scrollY + innerHeight) >= docH() - 2;
+    const smallStep = () => Math.max(10, Math.round(innerHeight * 0.02)); // ~human, smooth
+    const t0 = Date.now(), HARD_MS = 45000;
+
     if (to === "top") {
-      scrollTo({ top: 0 });
-      await new Promise(r => setTimeout(r, 250));
+      let g = 0;
+      while (scrollY > 0 && g++ < 8000 && (Date.now() - t0) < HARD_MS) {
+        const smooth = !document.hidden;
+        const before = scrollY;
+        scrollBy(0, -(smooth ? smallStep() : Math.round(innerHeight * 0.5)));
+        await sleep(smooth ? 22 : 90);
+        if (scrollY === before) break;
+      }
+      await sleep(150);
       return pageInfo();
     }
     if (to === "bottom") {
-      // Progressive scroll: step down a viewport at a time so lazy-loaded /
-      // virtualized content (e.g. a cart that fills in as you approach the end)
-      // gets rendered. Keep going while the page grows; stop once the height is
-      // stable at the bottom, or after maxSteps (guards against infinite feeds).
-      let steps = 0, stableRounds = 0, lastHeight = -1;
-      const pageHeight = () => document.documentElement.scrollHeight;
-      const atBottom = () => scrollY + innerHeight >= pageHeight() - 2;
-      while (steps < maxSteps) {
-        if (atBottom() && pageHeight() === lastHeight) {
-          if (++stableRounds >= 2) break; // no growth for two rounds → really done
-        } else {
-          stableRounds = 0;
+      // Descend continuously; pause at the bottom so lazy-loaded / virtualized content
+      // renders, and keep going while the page height grows — stop once it's stable.
+      let lastH = -1, stable = 0, g = 0;
+      while (g++ < 16000 && (Date.now() - t0) < HARD_MS) {
+        const smooth = !document.hidden;
+        const before = scrollY;
+        scrollBy(0, smooth ? smallStep() : Math.round(innerHeight * 0.5));
+        await sleep(smooth ? 22 : 90);
+        if (atBottom()) {
+          await sleep(750);
+          if (docH() === lastH) { if (++stable >= 2) break; } else { stable = 0; }
+          lastH = docH();
+        } else if (scrollY === before) {
+          break;
         }
-        lastHeight = pageHeight();
-        scrollBy({ top: innerHeight * 0.5 });
-        steps++;
-        await new Promise(r => setTimeout(r, stepDelayMs));
       }
-      return { ...pageInfo(), scrolledSteps: steps, reachedBottom: atBottom() };
+      await sleep(300);
+      return { ...pageInfo(), reachedBottom: atBottom() };
     }
-    scrollBy({ top: dy ?? innerHeight * 0.8 });
-    await new Promise(r => setTimeout(r, 250));
+    // scroll down by a chunk (dy px, or ~0.6 viewport)
+    const target = scrollY + (dy ?? Math.round(innerHeight * 0.6));
+    let g = 0;
+    while (scrollY < target && g++ < 8000 && (Date.now() - t0) < HARD_MS) {
+      const smooth = !document.hidden;
+      const stepMax = smooth ? smallStep() : Math.round(innerHeight * 0.4);
+      const before = scrollY;
+      scrollBy(0, Math.min(stepMax, target - scrollY));
+      await sleep(smooth ? 22 : 90);
+      if (scrollY === before) break;
+    }
+    await sleep(200);
     return pageInfo();
   }
 
