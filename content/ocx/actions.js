@@ -255,14 +255,32 @@
   }
 
   // ---------- eval_js ----------
+  // Bridge to MAIN world where eval/new Function is allowed.
+  // Content scripts run in isolated world with CSP that blocks 'unsafe-eval'.
+  // The accessibility-tree.js script (MAIN world) listens for __ocxEvalRequest.
   function evalJs({ code }) {
     if (!code) return { ok: false, error: "No code provided." };
-    try {
-      const result = new Function(code)();
-      return { ok: true, result: result ?? null };
-    } catch (e) {
-      return { ok: false, error: String(e?.message || e) };
-    }
+    return new Promise((resolve) => {
+      const requestId = 'ocx_eval_' + Math.random().toString(36).slice(2) + '_' + Date.now();
+      const timeout = setTimeout(() => {
+        cleanup();
+        resolve({ ok: false, error: "Eval timed out after 10s" });
+      }, 10000);
+      function onMessage(event) {
+        if (event.source !== window) return;
+        const data = event.data;
+        if (!data || data.type !== '__ocxEvalResult' || data.requestId !== requestId) return;
+        cleanup();
+        if (data.error) resolve({ ok: false, error: data.error });
+        else resolve({ ok: true, result: data.result });
+      }
+      function cleanup() {
+        clearTimeout(timeout);
+        window.removeEventListener('message', onMessage);
+      }
+      window.addEventListener('message', onMessage);
+      window.postMessage({ type: '__ocxEvalRequest', requestId, code }, '*');
+    });
   }
 
   lib.actions = {

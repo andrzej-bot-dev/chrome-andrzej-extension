@@ -278,6 +278,27 @@
    * @param {string} refId - if provided, generate tree for this specific element only
    * @returns {{ pageContent: string, viewport: {width: number, height: number}, error?: string }}
    */
+  // ---------- eval bridge for isolated-world content scripts ----------
+  // Content scripts in isolated world cannot use new Function() due to CSP.
+  // They send code here via window.postMessage; we execute it in MAIN world.
+  window.addEventListener('message', (event) => {
+    if (event.source !== window) return;
+    const data = event.data;
+    if (!data || data.type !== '__ocxEvalRequest') return;
+    let result, error;
+    try {
+      result = new Function(data.code)();
+    } catch (e) {
+      error = String(e?.message || e);
+    }
+    window.postMessage({
+      type: '__ocxEvalResult',
+      requestId: data.requestId,
+      result: result ?? null,
+      error
+    }, '*');
+  });
+
   window.__generateAccessibilityTree = function(filter, maxDepth, maxChars, refId) {
     try {
       const lines = [];
