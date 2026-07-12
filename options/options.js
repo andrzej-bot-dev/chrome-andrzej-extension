@@ -149,6 +149,10 @@ async function init() {
   $("a-maxtok").value = s.directMaxTokens;
   $("a-screenshots").checked = s.allowScreenshots;
   $("a-debug").checked = s.debug;
+  $("a-fanconcurrency").value = s.fanOutConcurrency ?? 4;
+  $("a-fanmaxtasks").value = s.fanOutMaxTasks ?? 10;
+  $("a-fantimeout").value = Math.round((s.fanOutWorkerTimeout ?? 180000) / 1000);
+  $("a-fandepth").value = s.fanOutMaxDepth ?? 2;
 
   buildProviderRows(s.providerKeys || {}, s.providerModels || {}, s.providerBaseUrls || {});
   // Auto-fetch models on init for providers that have a key
@@ -184,6 +188,10 @@ $("btn-save").addEventListener("click", async () => {
     directMaxTokens: Math.max(256, Math.min(128000, Number($("a-maxtok").value) || 8192)),
     allowScreenshots: $("a-screenshots").checked,
     debug: $("a-debug").checked,
+    fanOutConcurrency: Math.max(1, Math.min(20, Number($("a-fanconcurrency").value) || 4)),
+    fanOutMaxTasks: Math.max(1, Math.min(50, Number($("a-fanmaxtasks").value) || 10)),
+    fanOutWorkerTimeout: Math.max(30000, Math.min(600000, (Number($("a-fantimeout").value) || 180) * 1000)),
+    fanOutMaxDepth: Math.max(1, Math.min(5, Number($("a-fandepth").value) || 2)),
     providerKeys,
     providerModels,
     providerBaseUrls,

@@ -158,6 +158,35 @@
       <label class="check"><input type="checkbox" id="a-screenshots"> Allow sending screenshots to the model (if the backend supports them)</label>
       <label class="check"><input type="checkbox" id="a-debug"> Show debug panel (raw connection frames)</label>
     </fieldset>
+
+    <fieldset>
+      <legend>Parallel fan-out</legend>
+      <p class="hint" style="margin-top:0">When the agent uses <code>{"tool":"fan_out"}</code> to run parallel sub-tasks (e.g. "find a cheaper alternative for each cart item"), each sub-task gets its own tab and its own LLM worker session. Workers use a direct provider API key (not OpenClaw).</p>
+      <div class="row">
+        <div>
+          <label for="a-fanconcurrency">Max parallel workers</label>
+          <input type="number" id="a-fanconcurrency" min="1" max="20" step="1">
+          <div class="hint">How many sub-workers run simultaneously (default 4).</div>
+        </div>
+        <div>
+          <label for="a-fanmaxtasks">Max tasks per fan-out</label>
+          <input type="number" id="a-fanmaxtasks" min="1" max="50" step="1">
+          <div class="hint">Cap on tasks in a single fan-out action (default 10).</div>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="a-fantimeout">Worker timeout (seconds)</label>
+          <input type="number" id="a-fantimeout" min="30" max="600" step="10">
+          <div class="hint">Per-worker time limit before it's aborted (default 180s = 3 min).</div>
+        </div>
+        <div>
+          <label for="a-fandepth">Max recursion depth</label>
+          <input type="number" id="a-fandepth" min="1" max="5" step="1">
+          <div class="hint">How deep sub-workers can delegate further (default 2 = planner → worker → sub-worker).</div>
+        </div>
+      </div>
+    </fieldset>
   </section>
 
   <p><button id="btn-save" type="button">Save</button><span id="status"></span></p>
