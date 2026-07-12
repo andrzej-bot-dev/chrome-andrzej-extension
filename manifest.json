@@ -51,7 +51,13 @@
     },
     {
       "matches": ["<all_urls>"],
-      "js": ["content/content.js"],
+      "js": [
+        "content/ocx/refs.js",
+        "content/ocx/dom-utils.js",
+        "content/ocx/snapshot.js",
+        "content/ocx/actions.js",
+        "content/content.js"
+      ],
       "run_at": "document_start",
       "all_frames": false
     }
